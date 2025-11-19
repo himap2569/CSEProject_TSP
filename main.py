@@ -167,7 +167,6 @@ def tsp_bruteforce(dist, cutoff_seconds):
 def tsp_approx(ids, dist, seed):
     """
     2-approximation MST-based TSP algorithm should be implemented here.
-    For now, it's a stub so your teammates can fill it in later.
     """
     raise NotImplementedError("Approx algorithm not implemented yet.")
 
@@ -177,7 +176,6 @@ def tsp_approx(ids, dist, seed):
 def tsp_local_search(ids, dist, cutoff_seconds, seed):
     """
     Local search TSP algorithm (e.g., 2-opt, simulated annealing) goes here.
-    For now, it's a stub so your teammates can fill it in later.
     """
     raise NotImplementedError("Local search algorithm not implemented yet.")
 
