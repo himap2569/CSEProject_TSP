@@ -4,6 +4,7 @@ import os
 import math
 import time
 import itertools
+import random
 
 # ---------- Parsing the .tsp file ----------
 
@@ -168,7 +169,75 @@ def tsp_approx(ids, dist, seed):
     """
     2-approximation MST-based TSP algorithm should be implemented here.
     """
-    raise NotImplementedError("Approx algorithm not implemented yet.")
+    n = len(dist)
+
+    # Base cases
+    if n == 0:
+        return 0, ()
+    if n == 1:
+        return 0, (0,)
+
+    random.seed(seed)
+
+    # ----- Prim's algorithm for MST -----
+    start = 0
+    in_mst = [False] * n
+    parent = [-1] * n
+    key = [float('inf')] * n
+    key[start] = 0
+
+    for _ in range(n):
+        # Pick the next node with smallest key value
+        u = -1
+        min_val = float('inf')
+        for v in range(n):
+            if not in_mst[v] and key[v] < min_val:
+                min_val = key[v]
+                u = v
+
+        if u == -1:
+            break
+
+        in_mst[u] = True
+
+        # Update keys for neighbors
+        for v in range(n):
+            w = dist[u][v]
+            if not in_mst[v] and w < key[v]:
+                key[v] = w
+                parent[v] = u
+
+    # ----- Build adjacency list for MST -----
+    adj = [[] for _ in range(n)]
+    for v in range(n):
+        p = parent[v]
+        if p != -1:
+            adj[p].append(v)
+            adj[v].append(p)
+
+    # ----- DFS preorder traversal -----
+    visited = [False] * n
+    tour = []
+
+    def dfs(u):
+        visited[u] = True
+        tour.append(u)
+        for v in sorted(adj[u], key=lambda x: dist[u][x]):
+            if not visited[v]:
+                dfs(v)
+
+    dfs(start)
+
+    # Safety check: add any missed nodes (should not happen)
+    if len(tour) < n:
+        for v in range(n):
+            if not visited[v]:
+                dfs(v)
+
+    # Compute tour cost (cycle)
+    cost = compute_tour_cost(dist, tour)
+
+    return cost, tuple(tour)
 
 
 # ---------- Local Search (TO BE IMPLEMENTED) ----------
