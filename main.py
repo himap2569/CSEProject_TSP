@@ -6,6 +6,7 @@ import time
 import itertools
 import random
 import matplotlib.pyplot as plt
+import argparse
 
 # ---------- Parsing the .tsp file ----------
 
@@ -353,11 +354,11 @@ def write_solution(instance, method, cutoff, seed, cost, tour, ids):
     base = os.path.splitext(os.path.basename(instance))[0].lower()
 
     if method == "BF":
-        filename = f"{base} BF {cutoff}.sol"
+        filename = f"{base}_BF_{cutoff}.sol"
     elif method == "Approx":
-        filename = f"{base} Approx {seed}.sol"
+        filename = f"{base}_Approx_{seed}.sol"
     elif method == "LS":
-        filename = f"{base} LS {cutoff} {seed}.sol"
+        filename = f"{base}_LS_{cutoff}_{seed}.sol"
     else:
         raise ValueError("Unknown method")
 
@@ -372,52 +373,71 @@ def write_solution(instance, method, cutoff, seed, cost, tour, ids):
 
 
 
-def main(argv):
+def main():
     """
     Usage expected by the project:
 
       BF:
-        ./exec <instance> BF <cutoff>
+        ./exec -inst <instance> -alg BF -time <cutoff>
 
       Approx:
-        ./exec <instance> Approx <seed>
+        ./exec -inst <instance> -alg Approx -seed <seed>
 
       LS:
-        ./exec <instance> LS <cutoff> <seed>
+        ./exec -inst <instance> -alg LS -time <cutoff> -seed <seed>
     """
-    if len(argv) < 4:
-        print("Usage:")
-        print("  ./exec <instance> BF <cutoff>")
-        print("  ./exec <instance> Approx <seed>")
-        print("  ./exec <instance> LS <cutoff> <seed>")
-        sys.exit(1)
+    
 
-    instance = argv[1]
-    method = argv[2]
+    parser = argparse.ArgumentParser(
+        description='TSP Solve',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
+    parser.add_argument('-inst', required=True)
+    parser.add_argument('-alg', required=True,
+                        choices=['BF', 'Approx', 'LS'])
+    parser.add_argument('-time', type=int)
+    parser.add_argument('-seed', type=int)
+
+    args = parser.parse_args()
+    instance = args.inst
+    method = args.alg
+    cutoff = args.time
+    seed = args.seed
+
+    # Update filepath, if someone did not add folder as prefix
+    if not os.path.exists(instance):
+        instance = os.path.join('Data', os.path.basename(instance))
+        if not os.path.exists(instance):
+            print(f"Error: File not found: {args.inst}")
+            sys.exit(1)
 
     # Load instance
     ids, dist = parse_tsp_file(instance)
 
     if method == "BF":
-        cutoff = int(argv[3])
-        seed = None
+        if cutoff is None:
+            print("BF requires: ./exec -inst <instance> -alg BF -time <cutoff>")
+            sys.exit(1)
+
         print(f"[BF] instance={instance}, cutoff={cutoff}")
         cost, tour = tsp_bruteforce(dist, cutoff)
         write_solution(instance, method, cutoff, seed, cost, tour, ids)
 
     elif method == "Approx":
-        seed = int(argv[3])
-        cutoff = None
+        if seed is None:
+            print("Approx requires: ./exec -inst <instance> -alg Approx -seed <seed>")
+            sys.exit(1)
+
         print(f"[Approx] instance={instance}, seed={seed}")
         cost, tour = tsp_approx(ids, dist, seed)
         write_solution(instance, method, cutoff, seed, cost, tour, ids)
 
     elif method == "LS":
-        if len(argv) < 5:
-            print("LS requires: ./exec <instance> LS <cutoff> <seed>")
+        if seed is None or cutoff is None:
+            print("LS requires: ./exec -inst <instance> -alg LS -time <cutoff> -seed <seed>")
             sys.exit(1)
-        cutoff = int(argv[3])
-        seed = int(argv[4])
+
         print(f"[LS] instance={instance}, cutoff={cutoff}, seed={seed}")
         cost, tour = tsp_local_search(dist, cutoff, seed)
         write_solution(instance, method, cutoff, seed, cost, tour, ids)
@@ -428,4 +448,4 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main()
