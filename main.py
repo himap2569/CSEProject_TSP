@@ -4,6 +4,8 @@ import os
 import math
 import time
 import itertools
+import random
+import matplotlib.pyplot as plt
 
 # ---------- Parsing the .tsp file ----------
 
@@ -173,12 +175,165 @@ def tsp_approx(ids, dist, seed):
 
 # ---------- Local Search (TO BE IMPLEMENTED) ----------
 
-def tsp_local_search(ids, dist, cutoff_seconds, seed):
+def tsp_local_search(dist, cutoff_seconds, seed):
     """
-    Local search TSP algorithm (e.g., 2-opt, simulated annealing) goes here.
-    """
-    raise NotImplementedError("Local search algorithm not implemented yet.")
+    Local search using Simulated Annealing:
+    - Start with random path
+    - [Dropped due to better results with path reversal] Generate a neighbour by swapping a pair of nodes in path
+    - Generate a neighbour path by reversing part of the path
+    - Choose neighbour path 
+        - Deterministically, if lower cost
+        - With a probability, if higher cost
+    - Update temperature (and thus probability of choosing higher cost path) after each M iterations
 
+    Returns:
+        best_cost: cost of best tour found
+        best_tour: tuples of vertex indices (0..n-1)
+    """
+
+    n = len(dist)
+
+    # Base cases
+    if n == 0:
+        return 0, ()
+    if n == 1:
+        return 0, (0,)
+
+    # Setting the seed
+    random.seed(seed);
+
+    # Measuring the algorithm start time
+    start_time = time.time()
+
+    ### Constants/ Hyperparameters chosen ###
+    nSteps = 10000000 # Total steps our algorithm runs for, unless stopped basis cutoff time
+    coolingFraction = 0.995 # Fraction by which temperature T is reduced after M steps
+    M = 1000
+    T = 500.0
+    k = 1.0
+
+    ### Main Algorithm ###
+    # Random Start
+    S = list(range(0,n))
+    random.shuffle(S)
+    currentCost = compute_tour_cost(dist, S)
+    bestS = tuple(S)
+    bestCost = currentCost
+
+    # We store cost after every 1000 iters, and use it for plotting. 
+    # This helped looking at the plots and tuning hyperparameters
+    cost_history = []
+    step_history = []
+
+    # Function to swap a pair of nodes in a path
+    def swap_node_pair_at_random(path):
+
+        # Initializing the new path
+        new_path = list(path)
+        n = len(new_path)
+
+        # base case
+        if n<=3 :
+            return new_path
+
+        # indices to swap
+        i1, i2 = random.sample(range(n), 2)
+
+        # Updating the new path
+        temp = new_path[i1]
+        new_path[i1] = new_path[i2]
+        new_path[i2] = temp
+
+        return new_path
+
+    # Function to reverse a part of the path
+    def reverse_path_part(path):
+
+        # Initializing the new path
+        new_path = list(path)
+        n = len(new_path)
+
+        # base case
+        if n<=2 :
+            return new_path
+
+        # indices between which we reverse
+        i = random.randint(0, n-2)
+        j = random.randint(i+1, n-1)
+
+        # Iteratively swapping
+        while i<j:
+            temp = new_path[j]
+            new_path[j] = new_path[i]
+            new_path[i] = temp
+            i += 1
+            j -= 1
+
+        return new_path
+
+    for t in range(1, nSteps+1):
+        # Time curoff
+        if time.time() - start_time > cutoff_seconds:
+            break
+
+        # if t%5000 == 0:
+        #     print(f"Currently on iteration {t}/{nSteps}")
+
+        ### Option 1: Swap node pair - Less efficient ###
+        # S_new = swap_node_pair_at_random(S)
+
+        ### Option 2: Reverse a part of the graph - Better Results ###
+        S_new = reverse_path_part(S)
+
+        cost_new = compute_tour_cost(dist, S_new)
+
+        if cost_new <= currentCost: # if the new path has a lower cost, we directly choose it
+            S = S_new
+            currentCost = cost_new
+
+            if currentCost < bestCost:
+                bestCost = currentCost
+                bestS = tuple(S)
+        else: # else, we choose the new path with a probability
+            deltaE = cost_new - currentCost
+            p = math.exp(-deltaE/(k*T))
+            r = random.random()
+            if r<p:
+                S = S_new
+                currentCost = cost_new
+
+        if t%M==0: # Updating temperate after M steps each time
+            T = T*coolingFraction
+            cost_history.append(currentCost)
+            step_history.append(t)
+
+    # Plotting the graph - used this for hyperparameter tuning
+    # plot_cost_history(cost_history, step_history)
+
+    return bestCost, bestS
+
+def plot_cost_history(cost_history, step_history):
+    """
+    Plots the best cost found till current step, against the iteration step.
+    """
+
+    if not cost_history or len(cost_history)<2:
+        return
+
+    plt.figure(figsize=(10, 6))
+
+    # Plot the cost history
+    plt.plot(step_history, cost_history, marker='o', markersize=3, linestyle='-', color='indigo')
+
+    # Add labels and title
+    plt.title('Simulated Annealing Cost Convergence Trend')
+    plt.xlabel('Iteration') 
+    plt.ylabel('Best Tour Cost Found So Far')
+
+    plt.grid(True, linestyle=':', alpha=0.6)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
 
 # ---------- Writing .sol file ----------
 
@@ -264,7 +419,7 @@ def main(argv):
         cutoff = int(argv[3])
         seed = int(argv[4])
         print(f"[LS] instance={instance}, cutoff={cutoff}, seed={seed}")
-        cost, tour = tsp_local_search(ids, dist, cutoff, seed)
+        cost, tour = tsp_local_search(dist, cutoff, seed)
         write_solution(instance, method, cutoff, seed, cost, tour, ids)
 
     else:
