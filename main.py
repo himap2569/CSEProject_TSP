@@ -77,9 +77,68 @@ def compute_tour_cost(dist, tour):
     return cost
 
 
-# ---------- Optimized Brute-force TSP with cutoff ----------
+# ---------- Simple Brute-force TSP with cutoff ----------
 
 def tsp_bruteforce(dist, cutoff_seconds):
+    """
+    Simple brute-force TSP:
+      - Fix start node at 0
+      - Enumerate all permutations of remaining nodes
+      - Time cutoff (seconds): stop exploring when cutoff is reached
+
+    Returns:
+        best_cost : cost of best tour found
+        best_tour : tuple of vertex indices (0..n-1), starting at 0
+    """
+    # ---------- Simple Brute-force TSP with cutoff ----------
+
+def tsp_bruteforce(dist, cutoff_seconds):
+    """
+    Simple brute-force TSP:
+      - Fix start node at 0
+      - Enumerate all permutations of remaining nodes
+      - Time cutoff (seconds): stop exploring when cutoff is reached
+
+    Returns:
+        best_cost : cost of best tour found
+        best_tour : tuple of vertex indices (0..n-1), starting at 0
+    """
+    n = len(dist)
+    if n == 0:
+        return 0, ()
+    if n == 1:
+        return 0, (0,)
+
+    start_time = time.time()
+
+    best_cost = float("inf")
+    best_tour = None
+
+    # Nodes other than 0
+    nodes = list(range(1, n))
+
+    for perm in itertools.permutations(nodes):
+        # Enforce cutoff
+        if time.time() - start_time > cutoff_seconds:
+            break
+
+        tour = (0,) + perm  # full tour starting at 0
+        cost = compute_tour_cost(dist, tour)
+
+        if cost < best_cost:
+            best_cost = cost
+            best_tour = tour
+
+    # If we never improved (e.g., cutoff was extremely tiny), fall back
+    if best_tour is None:
+        best_tour = tuple(range(n))
+        best_cost = compute_tour_cost(dist, best_tour)
+
+    return best_cost, best_tour
+    
+# ---------- Optimized Brute-force TSP with cutoff ----------
+
+def tsp_bruteforce_optimized(dist, cutoff_seconds):
     """
     Brute-force TSP with:
       - fixed start node 0
