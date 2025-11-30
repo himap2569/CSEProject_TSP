@@ -76,21 +76,7 @@ def compute_tour_cost(dist, tour):
         cost += dist[u][v]
     return cost
 
-
 # ---------- Simple Brute-force TSP with cutoff ----------
-
-def tsp_bruteforce(dist, cutoff_seconds):
-    """
-    Simple brute-force TSP:
-      - Fix start node at 0
-      - Enumerate all permutations of remaining nodes
-      - Time cutoff (seconds): stop exploring when cutoff is reached
-
-    Returns:
-        best_cost : cost of best tour found
-        best_tour : tuple of vertex indices (0..n-1), starting at 0
-    """
-    # ---------- Simple Brute-force TSP with cutoff ----------
 
 def tsp_bruteforce(dist, cutoff_seconds):
     """
