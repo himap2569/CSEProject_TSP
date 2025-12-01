@@ -227,7 +227,7 @@ def tsp_approx(ids, dist, seed):
     random.seed(seed)
 
     # ----- Prim's algorithm for MST -----
-    start = 0
+    start = seed % n
     in_mst = [False] * n
     parent = [-1] * n
     key = [float('inf')] * n
