@@ -1,4 +1,37 @@
 #!/usr/bin/env python3
+
+"""
+TSP Solver using BF, Approx, LS Algorithm Implementations
+
+This script implements three approaches to solve the Traveling Salesman Problem (TSP):
+
+Main Functions:
+- parse_tsp_file(path): Parses .tsp file format (id x y coordinates) and builds distance matrix
+- compute_tour_cost(dist, tour): Calculates total cost of a tour including return to start
+
+Algorithm Implementations:
+- tsp_bruteforce(dist, cutoff_seconds): Simple brute-force with time cutoff
+- tsp_bruteforce_optimized(dist, cutoff_seconds): Enhanced brute-force with branch-and-bound pruning,
+    symmetry reduction, and nearest-neighbor ordering
+- tsp_approx(ids, dist, seed): 2-approximation algorithm using MST (Prim's) followed by DFS preorder traversal
+- tsp_local_search(dist, cutoff_seconds, seed): Simulated annealing with path reversal for finding neighbors,
+    exponential cooling schedule (T *= 0.995 every 1000 steps)
+
+Helper Functions:
+- swap_node_pair_at_random(path): Random pairwise node swap (deprecated in favor of reversal)
+- reverse_path_part(path): Reverses random subpath for neighborhood generation
+- plot_cost_history(cost_history, step_history): Visualization for hyperparameter tuning
+
+Output:
+- write_solution(instance, method, cutoff, seed, cost, tour, ids): Writes .sol files with format
+    <city>_<algorithm>_<params>.sol containing tour cost and vertex sequence
+
+Command-line Interface:
+- BF: ./exec -inst <file> -alg BF -time <cutoff>
+- Approx: ./exec -inst <file> -alg Approx -seed <seed>
+- LS: ./exec -inst <file> -alg LS -time <cutoff> -seed <seed>
+"""
+
 import sys
 import os
 import math
@@ -210,7 +243,7 @@ def tsp_bruteforce_optimized(dist, cutoff_seconds):
     return best_cost, best_tour
 
 
-# ---------- Approx (TO BE IMPLEMENTED) ----------
+# ---------- Approx ----------
 
 def tsp_approx(ids, dist, seed):
     """
@@ -287,7 +320,7 @@ def tsp_approx(ids, dist, seed):
     return cost, tuple(tour)
 
 
-# ---------- Local Search (TO BE IMPLEMENTED) ----------
+# ---------- Local Search ----------
 
 def tsp_local_search(dist, cutoff_seconds, seed):
     """

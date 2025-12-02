@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
+
+"""
+Benchmarking script for TSP algorithms (Brute Force, Approx, Local Search).
+Runs each algorithm on all .tsp instances in Data/, measures runtime and solution quality,
+and outputs results to results.csv.
+"""
+
 import os
 import time
 import glob
 import csv
 import math
 import subprocess
-
-# -------------------- CONFIG --------------------
 
 DATA_DIR = "Data"           # folder with .tsp files
 EXEC_NAME = "exec"          # the provided exec wrapper
@@ -16,8 +21,6 @@ LS_CUTOFF = 300             # seconds for local search
 LS_SEEDS = list(range(10))  # at least 10 seeds as required
 
 RESULTS_CSV = "results.csv"
-
-# ------------------------------------------------
 
 def run_cmd(cmd):
     """Run a shell command and measure wall-clock time (in seconds)."""
@@ -59,7 +62,7 @@ def main():
         base = os.path.splitext(inst_name)[0].lower()
         print(f"\n=== Instance: {inst_name} ===")
 
-        # ---------- 1) Brute Force ----------
+        # Brute Force
         print("Running BF...")
         bf_time = run_cmd([
             exec_path,
@@ -74,7 +77,7 @@ def main():
         # Heuristic: if BF finishes well before cutoff, we assume full tour explored
         bf_full = bf_time < 0.95 * BF_CUTOFF
 
-        # ---------- 2) Approx ----------
+        # Approx
         print("Running Approx...")
         approx_seed = 0
         approx_time = run_cmd([
@@ -88,7 +91,7 @@ def main():
         approx_cost = parse_sol_file(approx_sol)
         approx_full = True  # MST-based approx always returns a full tour
 
-        # ---------- 3) Local Search (multiple seeds) ----------
+        # Local Search (multiple seeds) 
         print("Running LS with multiple seeds...")
         ls_times = []
         ls_costs = []
@@ -113,7 +116,7 @@ def main():
         ls_best_cost = min(ls_costs)
         ls_full = True   # LS always maintains a full tour
 
-        # ---------- 4) Relative Errors (vs best LS) ----------
+        # Relative Errors (vs best LS)
         # RelError = (algo_cost - best_LS_cost) / best_LS_cost
         def rel_error(cost):
             return (cost - ls_best_cost) / ls_best_cost if ls_best_cost > 0 else 0.0
@@ -122,7 +125,7 @@ def main():
         approx_rel = rel_error(approx_cost)
         ls_rel = rel_error(ls_avg_cost)
 
-        # ---------- 5) Add row ----------
+        # Add row
         rows.append({
             "instance": inst_name,
             "bf_time": bf_time,
@@ -139,7 +142,7 @@ def main():
             "ls_rel_error": ls_rel,
         })
 
-    # ---------- 6) Write CSV ----------
+    # Write CSV
     fieldnames = [
         "instance",
         "bf_time", "bf_cost", "bf_full_tour", "bf_rel_error",
