@@ -260,7 +260,7 @@ def tsp_approx(ids, dist, seed):
     random.seed(seed)
 
     # ----- Prim's algorithm for MST -----
-    start = 0
+    start = seed % n
     in_mst = [False] * n
     parent = [-1] * n
     key = [float('inf')] * n
@@ -302,9 +302,15 @@ def tsp_approx(ids, dist, seed):
     def dfs(u):
         visited[u] = True
         tour.append(u)
-        for v in sorted(adj[u], key=lambda x: dist[u][x]):
+
+        # Randomized child order
+        children = adj[u][:]
+        random.shuffle(children)
+
+        for v in children:
             if not visited[v]:
                 dfs(v)
+
 
     dfs(start)
 
